@@ -74,11 +74,11 @@ class RatingDataProcess(object):
 
         print data.describe()
         print 'saving'
-        data.to_csv(to_file, head=False, index=False, sep='\t')
+        data.to_csv(to_file, header=False, index=False, sep='\t')
 
     def data_split(self,data_file, to_file, test_frac=0.2):
         '''
-        split the data set accroding to the user,say,for each user,80% pairs are train data,the rest are test data
+        split the data set according to specific partion
         '''
         from sklearn.cross_validation import train_test_split
         data = pd.read_table(data_file, header=None)
@@ -89,24 +89,63 @@ class RatingDataProcess(object):
         train_file = to_file + '_train.dat'
         test_file = to_file + '_test.dat'
         train.to_csv(train_file, header=False, index=False)
-        test.to_csv(test_file, headr=False, index=False)
+        test.to_csv(test_file, header=False, index=False)
+        print "train users:{0};test users:{1}".format(len(train[0].drop_duplicates()), len(test[0].drop_duplicates()))
+        print "train items:{0};test items:{1}".format(len(train[1].drop_duplicates()), len(test[1].drop_duplicates()))
+
+    def data_split_by_user(self,data_file, to_file, test_frac=0.2):
+        '''
+        split the data set accroding to the user,say,for each user,80% pairs are train data,the rest are test data
+        '''
+        from sklearn.cross_validation import train_test_split
+        data = pd.read_table(data_file, header=None)
+
+        unique_users = data[0].drop_duplicates()
+
+        train_data=[]
+        test_data = []
+        for u in unique_users:
+            train,test=train_test_split(data[data[0]==u], test_size=test_frac)
+            train_data.append(train)
+            test_data.append(test)
+
+        train = pd.concat(train_data)
+        test = pd.concat(test_data)
+
+        train_file = to_file + '_train.dat'
+        test_file = to_file + '_test.dat'
+        train.to_csv(train_file, header=False, index=False,sep='\t')
+        test.to_csv(test_file, header=False, index=False,sep='\t')
+        print train.describe()
+        print test.describe()
         print "train users:{0};test users:{1}".format(len(train[0].drop_duplicates()), len(test[0].drop_duplicates()))
         print "train items:{0};test items:{1}".format(len(train[1].drop_duplicates()), len(test[1].drop_duplicates()))
 
 
 if __name__=="__main__":
 
-    processor = RatingDataProcess("/Users/dong/Desktop/BoostingFM-IJCAI18/dataset/ml-100k/")
+    # processor = RatingDataProcess("/Users/dong/Desktop/BoostingFM-IJCAI18/dataset/ml-100k/")
+    #
+    # org_data_path = processor.data_path+'u.all.nontime'
+    #
+    # print "select_heavy_users......"
+    # processor.select_heavy_users(org_data_path,processor.data_path+'heavu_user_rating.dat')
+    #
+    # print "remapping id......"
+    # processor.remapping_id(processor.data_path+'heavu_user_rating.dat',processor.data_path+'remapping_user_rating.dat')
+    #
+    # print "spliting data......"
+    # processor.data_split(processor.data_path+'remapping_user_rating.dat',processor.data_path+'ml-100')
+    #
+    # print "DONE!"
 
-    org_data_path = processor.data_path+'u.all.nontime'
+    # processor = RatingDataProcess("/Users/dong/Desktop/BoostingFM-IJCAI18/dataset/ml-100k/")
+    # print "spliting data......"
+    # processor.data_split_by_user(processor.data_path + 'remapping_user_rating.dat', processor.data_path + 'ml-100')
 
-    print "select_heavy_users......"
-    processor.select_heavy_users(org_data_path,processor.data_path+'heavu_user_rating.dat')
-
-    print "remapping id......"
-    processor.remapping_id(processor.data_path+'heavu_user_rating.dat',processor.data_path+'remapping_user_rating.dat')
-
-    print "spliting data......"
-    processor.data_split(processor.data_path+'remapping_user_rating.dat',processor.data_path+'ml-100')
-
+    folder_list=['ecahmoive','ml-100k','ml-last-small']
+    for folder in folder_list:
+        processor = RatingDataProcess("/Users/dong/Desktop/split/"+folder+'/')
+        print "spliting data......"
+        processor.data_split_by_user(processor.data_path + 'all.dat', processor.data_path + folder)
     print "DONE!"
